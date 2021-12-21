@@ -1,8 +1,44 @@
 import Head from 'next/head'
-import Image from 'next/image'
+import { useEffect, useState } from 'react'
+import { ethers } from 'ethers'
 import styles from '../styles/Home.module.css'
+import { connectToContract, getAccount, getProviderSigned } from '../utils/ethers'
+import Token from '../artifacts/contracts/Token.sol/Token.json';
+
 
 export default function Home() {
+
+  const [contract, setContract] = useState();
+  const [supply, setSupply] = useState();
+  const [balance, setBalance] = useState();
+
+  useEffect(async () => {
+    const contract = await connectToContract();
+    setContract(contract);
+    _getSupply(contract);
+    _getBalance(contract);
+  }, []);
+  
+  async function _getSupply(contract) {
+    const totalSupply = await contract.totalSupply();
+    setSupply(ethers.utils.formatUnits(totalSupply, 0));
+  } 
+  
+  async function _getBalance(contract) {
+    const account = await getAccount();
+    const balanceOfUser = await contract.balanceOf(account);
+    setBalance(ethers.utils.formatUnits(balanceOfUser, 0));
+  }
+
+  async function _transfer() {
+    const contract = await getProviderSigned();
+    const transaction = await contract.transfer(
+      '0x4bD23e98d0D492536F2e84630aDEbE2Fd01AFBc2', 
+      "2500"
+    );
+    await transaction.wait();
+  }
+
   return (
     <div className={styles.container}>
       <Head>
@@ -13,57 +49,14 @@ export default function Home() {
 
       <main className={styles.main}>
         <h1 className={styles.title}>
-          Welcome to <a href="https://nextjs.org">Next.js!</a>
+          Welcome to <a href="https://nextjs.org">Bubble Token!</a>
         </h1>
-
-        <p className={styles.description}>
-          Get started by editing{' '}
-          <code className={styles.code}>pages/index.js</code>
-        </p>
-
-        <div className={styles.grid}>
-          <a href="https://nextjs.org/docs" className={styles.card}>
-            <h2>Documentation &rarr;</h2>
-            <p>Find in-depth information about Next.js features and API.</p>
-          </a>
-
-          <a href="https://nextjs.org/learn" className={styles.card}>
-            <h2>Learn &rarr;</h2>
-            <p>Learn about Next.js in an interactive course with quizzes!</p>
-          </a>
-
-          <a
-            href="https://github.com/vercel/next.js/tree/master/examples"
-            className={styles.card}
-          >
-            <h2>Examples &rarr;</h2>
-            <p>Discover and deploy boilerplate example Next.js projects.</p>
-          </a>
-
-          <a
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-          >
-            <h2>Deploy &rarr;</h2>
-            <p>
-              Instantly deploy your Next.js site to a public URL with Vercel.
-            </p>
-          </a>
+        <p>Supply is : {supply}</p>
+        <p>My balance is : {balance} </p>
+        <div className='mt-5'>
+          <button onClick={() => _transfer()}className='bg-green-500 hover:bg-pink-600 text-white font-bold py-2 px-4 rounded-full m-auto'>Transfer</button>
         </div>
       </main>
-
-      <footer className={styles.footer}>
-        <a
-          href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Powered by{' '}
-          <span className={styles.logo}>
-            <Image src="/vercel.svg" alt="Vercel Logo" width={72} height={16} />
-          </span>
-        </a>
-      </footer>
     </div>
   )
 }
